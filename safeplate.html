@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SafePlate AI</title>
+<style>
+:root{--ink:#f4f7fb;--mut:#b9c4d6;--glass:rgba(255,255,255,.12);--line:rgba(255,255,255,.25);--g:#2ecc71;--y:#f1c40f;--r:#e74c3c;--acc:#5dd6c0}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);
+background:radial-gradient(circle at 15% 10%,#1f8f7a 0,transparent 40%),radial-gradient(circle at 85% 85%,#5b3fd1 0,transparent 45%),#0e1726;background-attachment:fixed}
+.app{max-width:480px;margin:0 auto;padding:16px 16px 100px}
+.glass{background:var(--glass);border:1px solid var(--line);border-radius:20px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);padding:16px;margin-bottom:12px}
+h1{margin:8px 0 4px;font-size:28px}h2{margin:18px 0 8px;font-size:18px}h3{margin:0 0 4px;font-size:16px}
+p{margin:0;color:var(--mut);line-height:1.5;font-size:14px}
+.screen{display:none}.screen.active{display:block}
+.row{display:flex;gap:10px;align-items:flex-start}.ico{font-size:24px}
+.step{display:flex;gap:12px;align-items:center}.num{min-width:32px;height:32px;border-radius:50%;background:var(--acc);color:#0e1726;display:grid;place-items:center;font-weight:700}
+button{font:inherit;border:0;border-radius:14px;padding:14px 18px;font-weight:600;cursor:pointer;background:var(--acc);color:#0e1726;width:100%;text-align:center;display:block}
+button.ghost{background:var(--glass);color:var(--ink);border:1px solid var(--line)}
+button:disabled{opacity:.45;cursor:not-allowed}
+input[type=text],select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--ink);font:inherit;margin-top:6px}
+label.lbl{display:block;font-size:13px;color:var(--mut);margin-top:12px}
+.drop{border:2px dashed var(--line);border-radius:18px;padding:28px 12px;text-align:center;cursor:pointer;display:block}
+#preview{width:100%;max-height:260px;object-fit:contain;border-radius:14px;margin-top:12px}
+.scanning{position:relative;overflow:hidden}
+.scanning::after{content:"";position:absolute;left:0;right:0;height:4px;background:var(--acc);box-shadow:0 0 18px var(--acc);animation:sweep 1.4s linear infinite}
+@keyframes sweep{0%{top:0}100%{top:100%}}
+.badge{display:inline-block;padding:6px 14px;border-radius:999px;font-weight:700;font-size:14px;color:#0e1726}
+.safe,.green{background:var(--g)}.caution,.yellow{background:var(--y)}.avoid,.red{background:var(--r);color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{padding:6px 12px;border-radius:999px;border:1px solid var(--line);font-size:13px}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:middle}
+ul{margin:6px 0 0;padding-left:20px;color:var(--mut);font-size:14px;line-height:1.6}
+.demo{background:rgba(231,76,60,.25);border:1px solid var(--r);border-radius:12px;padding:10px;font-size:13px;margin-bottom:12px}
+#details{display:none}#details.open{display:block}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;justify-content:center;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:rgba(14,23,38,.7);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--line)}
+nav button{max-width:150px;padding:10px;font-size:13px;background:transparent;color:var(--mut);border:1px solid transparent}
+nav button.on{background:var(--glass);color:var(--ink);border-color:var(--line)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SCREEN 1: problems, solutions, how it works -->
+<section class="screen active" id="s1">
+  <h1>SafePlate AI</h1>
+  <p>Understand any packaged food label in seconds, in your own language.</p>
+
+  <h2>The problem</h2>
+  <div class="glass row"><span class="ico">🔍</span><div><h3>Labels are hard to read</h3><p>Tiny, crowded, technical text, especially for elderly people.</p></div></div>
+  <div class="glass row"><span class="ico">⚠️</span><div><h3>Hidden risks</h3><p>Allergens and additives are buried in long ingredient lists.</p></div></div>
+  <div class="glass row"><span class="ico">🗣️</span><div><h3>Language and literacy gaps</h3><p>Many people cannot easily read English labels.</p></div></div>
+
+  <h2>Our solution</h2>
+  <div class="glass"><p>SafePlate reads the whole packet from a photo, explains it simply, and warns you about your allergies, additives, halal/vegan status and expiry date. It can also speak the result out loud.</p></div>
+
+  <h2>How it works</h2>
+  <div class="glass">
+    <div class="step"><span class="num">1</span><p>Take or upload a photo of the packet.</p></div><br>
+    <div class="step"><span class="num">2</span><p>AI reads the label and checks it against your allergies.</p></div><br>
+    <div class="step"><span class="num">3</span><p>Get a short result, open details, or tap Listen.</p></div>
+  </div>
+  <button onclick="go(2)">Start scanning</button>
+</section>
+
+<!-- SCREEN 2: scan / upload -->
+<section class="screen" id="s2">
+  <h1>Scan a packet</h1>
+  <p>Take a clear photo of the ingredients and expiry date.</p>
+  <div class="glass" id="scanBox">
+    <label class="drop" for="file"><div class="ico">📷</div><p>Tap to take a photo or upload</p></label>
+    <input id="file" type="file" accept="image/*" capture="environment" hidden>
+    <img id="preview" alt="Packet preview" hidden>
+    <label class="lbl" for="allergies">My allergies (separate with commas)</label>
+    <input id="allergies" type="text" placeholder="e.g. peanuts, milk, gluten">
+    <label class="lbl" for="lang">Result language</label>
+    <select id="lang">
+      <option value="en-IN">English</option><option value="hi-IN">हिन्दी</option>
+      <option value="kn-IN">ಕನ್ನಡ</option><option value="ta-IN">தமிழ்</option><option value="te-IN">తెలుగు</option>
+    </select>
+  </div>
+  <button id="scanBtn" disabled>Scan now</button>
+  <p id="status" style="text-align:center;margin-top:10px"></p>
+</section>
+
+<!-- SCREEN 3: results -->
+<section class="screen" id="s3">
+  <h1>Result</h1>
+  <div id="empty" class="glass"><p>No scan yet. Scan a packet first.</p></div>
+  <div id="result" hidden>
+    <div id="demoNote" class="demo" hidden>Demo result only. It is NOT a real analysis of your photo. Connect your backend before trusting it.</div>
+    <div class="glass">
+      <span id="verdict" class="badge"></span>
+      <p id="summary" style="margin-top:12px;color:var(--ink);font-size:16px"></p>
+      <p style="margin-top:12px"><span id="expDot" class="dot"></span><span id="expText"></span></p>
+      <div class="chips" id="chips"></div>
+    </div>
+    <button id="listenBtn">🔊 Listen</button>
+    <button class="ghost" id="moreBtn" style="margin-top:8px">Show details</button>
+    <div id="details" class="glass" style="margin-top:12px">
+      <h3>Ingredients</h3><ul id="ing"></ul>
+      <h3 style="margin-top:14px">Allergens</h3><ul id="all"></ul>
+      <h3 style="margin-top:14px">Additives</h3><ul id="add"></ul>
+    </div>
+  </div>
+  <button class="ghost" style="margin-top:12px" onclick="go(2)">Scan another</button>
+</section>
+
+</div>
+<nav>
+  <button class="on" onclick="go(1)">1 About</button>
+  <button onclick="go(2)">2 Scan</button>
+  <button onclick="go(3)">3 Result</button>
+</nav>
+
+<script>
+// ===== CONNECT YOUR BACKEND HERE =====
+// Expected request : POST {image (base64 jpeg), mimeType, allergies[], language}
+// Expected response: {verdict:"safe|caution|avoid", summary, expiry:{status:"green|yellow|red", text},
+//                     halal:true|false|null, vegan:true|false|null, ingredients[], allergens[], additives[]}
+const ANALYZE_URL = "/api/analyze";
+
+const $ = s => document.querySelector(s);
+let imgData = null, lastSpeech = "";
+
+function go(n){
+  document.querySelectorAll(".screen").forEach((e,i)=>e.classList.toggle("active",i===n-1));
+  document.querySelectorAll("nav button").forEach((b,i)=>b.classList.toggle("on",i===n-1));
+  window.scrollTo(0,0);
+}
+
+function shrink(file){ // resize so uploads stay small
+  return new Promise((ok,bad)=>{
+    const img=new Image(), url=URL.createObjectURL(file);
+    img.onload=()=>{const s=Math.min(1,1280/Math.max(img.width,img.height)),c=document.createElement("canvas");
+      c.width=img.width*s;c.height=img.height*s;c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url);ok(c.toDataURL("image/jpeg",.85).split(",")[1]);};
+    img.onerror=bad;img.src=url;
+  });
+}
+
+$("#file").addEventListener("change", async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{ imgData=await shrink(f); $("#preview").src="data:image/jpeg;base64,"+imgData; $("#preview").hidden=false; $("#scanBtn").disabled=false; $("#status").textContent=""; }
+  catch{ $("#status").textContent="Could not read that image. Try another."; }
+});
+
+async function analyze(payload){
+  try{
+    const r=await fetch(ANALYZE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    if(!r.ok) throw new Error(r.status);
+    return {...await r.json(),demo:false};
+  }catch{
+    await new Promise(r=>setTimeout(r,1800));
+    return {demo:true,verdict:"caution",summary:"Contains milk and an artificial colour. Not suitable if you avoid dairy.",
+      expiry:{status:"yellow",text:"Expires soon, check the date"},halal:null,vegan:false,
+      ingredients:["Sugar","Milk solids","Wheat flour","Palm oil"],allergens:["Milk","Wheat (gluten)"],additives:["Colour (E102)"]};
+  }
+}
+
+$("#scanBtn").addEventListener("click", async ()=>{
+  const box=$("#scanBox"); box.classList.add("scanning"); $("#scanBtn").disabled=true; $("#status").textContent="Reading the label...";
+  const allergies=$("#allergies").value.split(",").map(s=>s.trim()).filter(Boolean);
+  const res=await analyze({image:imgData,mimeType:"image/jpeg",allergies,language:$("#lang").value});
+  box.classList.remove("scanning"); $("#scanBtn").disabled=false; $("#status").textContent="";
+  show(res); go(3);
+});
+
+function fill(sel,arr){const ul=$(sel);ul.textContent="";(arr&&arr.length?arr:["None found"]).forEach(t=>{const li=document.createElement("li");li.textContent=t;ul.appendChild(li);});}
+
+function show(r){
+  $("#empty").hidden=true; $("#result").hidden=false; $("#demoNote").hidden=!r.demo;
+  const v=["safe","caution","avoid"].includes(r.verdict)?r.verdict:"caution";
+  const names={safe:"Looks safe",caution:"Be careful",avoid:"Avoid"};
+  $("#verdict").className="badge "+v; $("#verdict").textContent=names[v];
+  $("#summary").textContent=r.summary||"";
+  const ex=r.expiry||{}; $("#expDot").className="dot "+(["green","yellow","red"].includes(ex.status)?ex.status:""); $("#expText").textContent=ex.text||"Expiry not found";
+  const chips=$("#chips"); chips.textContent="";
+  const add=t=>{const c=document.createElement("span");c.className="chip";c.textContent=t;chips.appendChild(c);};
+  if(r.halal!=null) add(r.halal?"Halal":"Not halal"); if(r.vegan!=null) add(r.vegan?"Vegan":"Not vegan");
+  fill("#ing",r.ingredients); fill("#all",r.allergens); fill("#add",r.additives);
+  $("#details").classList.remove("open"); $("#moreBtn").textContent="Show details";
+  lastSpeech=[r.summary,ex.text,(r.allergens&&r.allergens.length)?"Allergens: "+r.allergens.join(", "):""].filter(Boolean).join(". ");
+}
+
+$("#moreBtn").addEventListener("click",()=>{const d=$("#details");d.classList.toggle("open");$("#moreBtn").textContent=d.classList.contains("open")?"Hide details":"Show details";});
+
+$("#listenBtn").addEventListener("click",()=>{
+  if(!("speechSynthesis" in window)){alert("Voice is not supported in this browser.");return;}
+  if(speechSynthesis.speaking){speechSynthesis.cancel();return;}
+  const u=new SpeechSynthesisUtterance(lastSpeech); u.lang=$("#lang").value; u.rate=.95; speechSynthesis.speak(u);
+});
+</script>
+</body>
+</html>
